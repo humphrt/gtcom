@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/mkideal/cli"
 )
@@ -14,16 +15,19 @@ func main() {
 			argv.Tag = "DEV"
 		}
 
-		if _, err := os.Stat("./VERSION"); os.IsNotExist(err) {
-			createFileWithContent("VERSION", "0.0.0")
+		absPath, err := filepath.Abs("./")
+		CheckFatalError(err, true)
+		rootPath := GetRootPath(absPath, 0)
+		if _, err := os.Stat(rootPath + "/VERSION"); os.IsNotExist(err) {
+			createFileWithContent(rootPath+"/VERSION", "0.0.0")
 		}
 
-		data := getVersionFileContent()
-		err := ParseFile(data)
+		data, err := GetVersionFileContent(rootPath + "/VERSION")
+		CheckFatalError(err, true)
+		err = ParseFile(data)
 		CheckFatalError(err, false, "Error: Bad format in VERSION file")
 
-		Core(data, argv)
-
+		Core(data, argv, rootPath)
 		return nil
 	}))
 }

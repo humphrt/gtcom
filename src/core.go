@@ -8,19 +8,21 @@ import (
 	"strings"
 )
 
-func Core(data string, argv *ArgT) {
+//Core main loop of the program
+func Core(data string, argv *ArgT, rootPath string) {
 	currVersion := IncrementVersion(argv.Tag, data)
 	newVersion := strconv.Itoa(currVersion.MajorX) + "." + strconv.Itoa(currVersion.MinorY) + "." + strconv.Itoa(currVersion.FixZ)
 	commitMessage := "[v" + newVersion + "][" + argv.Tag + "] " + argv.Message
-	createFileWithContent("VERSION", newVersion)
-	exec.Command("sh", "-c", "git add VERSION").Output()
-	out, err := exec.Command("sh", "-c", "git commit -m \""+commitMessage+"\"").Output()
+
+	createFileWithContent(rootPath+"/VERSION", newVersion)
+	out, err := ExecutionGit(commitMessage, data, rootPath)
 	if err != nil {
-		createFileWithContent("VERSION", data)
+		createFileWithContent(rootPath+"/VERSION", data)
 	}
-	fmt.Printf("%s", out)
+	fmt.Printf(string(out))
 }
 
+//IncrementVersion increment the version in function of the tag
 func IncrementVersion(tag string, data string) Version {
 	version := GetVersion(data)
 	switch {
@@ -33,12 +35,14 @@ func IncrementVersion(tag string, data string) Version {
 		version.FixZ = 0
 	case isInArray(tag, tagsFix):
 		version.FixZ++
+	case isInArray(tag, tagsNoinc):
 	default:
-		CheckFatalError(errors.New(""), false, "ERROR: commit tag {", tag, "} doesn't exist")
+		CheckFatalError(errors.New("commit tag { "+tag+" } doesn't exist !"), true)
 	}
 	return version
 }
 
+//GetVersion get the current version of the file version
 func GetVersion(data string) Version {
 	var (
 		vers Version
@@ -47,13 +51,20 @@ func GetVersion(data string) Version {
 
 	s := strings.Split(data, ".")
 	vers.MajorX, err = strconv.Atoi(s[0])
-	CheckFatalError(err, false, "ERROR: Bad format in VERSION file")
+	CheckFatalError(err, false, "Bad format in VERSION file")
 
 	vers.MinorY, err = strconv.Atoi(s[1])
-	CheckFatalError(err, false, "ERROR: Bad format in VERSION file")
+	CheckFatalError(err, false, "Bad format in VERSION file")
 
 	vers.FixZ, err = strconv.Atoi(s[2])
-	CheckFatalError(err, false, "ERROR: Bad format in VERSION file")
+	CheckFatalError(err, false, "Bad format in VERSION file")
 
 	return vers
+}
+
+//ExecutionGit return the execution of git command
+func ExecutionGit(commitMessage, data, rootPath string) ([]byte, error) {
+	fmt.Println(rootPath)
+	exec.Command("sh", "-c", "git add "+rootPath+"/VERSION").Output()
+	return exec.Command("sh", "-c", "git commit -m \""+commitMessage+"\"").Output()
 }

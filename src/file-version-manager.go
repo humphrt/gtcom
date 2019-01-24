@@ -8,29 +8,25 @@ import (
 	"regexp"
 )
 
-func createFileWithContent(filename string, content string) int {
-	f, err := os.Create(filename)
+//createFileWithContent Create the file, with content
+func createFileWithContent(pathfile string, content string) {
+	fmt.Println(pathfile)
+	f, err := os.Create(pathfile)
+	CheckFatalError(err, true)
 
-	if err != nil {
-		fmt.Println(err)
-		return 1
-	}
 	f.WriteString(content)
 
 	err = f.Close()
-	if err != nil {
-		fmt.Println(err)
-		return 1
-	}
-	return 0
+	CheckFatalError(err, true)
 }
 
-func getVersionFileContent() string {
-	data, err := ioutil.ReadFile("VERSION")
-	CheckFatalError(err, true, "File reading error:")
-	return string(data)
+//GetVersionFileContent get data of file version
+func GetVersionFileContent(pathfile string) (string, error) {
+	data, err := ioutil.ReadFile(pathfile)
+	return string(data), err
 }
 
+//ParseFile parse the file version
 func ParseFile(data string) error {
 	r, _ := regexp.Compile("^[0-9]+\\.[0-9]+\\.[0-9]+$")
 	valid := r.MatchString(data)
